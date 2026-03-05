@@ -7,18 +7,18 @@ import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Nat "mo:core/Nat";
 import Int "mo:core/Int";
-import Order "mo:core/Order";
 import List "mo:core/List";
-
-
+import Order "mo:core/Order";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-// Use migration module in actor
+
 
 actor {
   // Include authorization module
   let accessControlState = AccessControl.initState();
+  var _nextId = 1;
+
   include MixinAuthorization(accessControlState);
 
   public type UserProfile = {
@@ -67,12 +67,10 @@ actor {
     };
   };
 
-  var nextId = 1;
+  let _entries = Map.empty<Nat, Entry>();
+  let _userProfiles = Map.empty<Principal, UserProfile>();
 
-  let entries = Map.empty<Nat, Entry>();
-  let userProfiles = Map.empty<Principal, UserProfile>();
-
-  var settings : AppSettings = {
+  var _settings : AppSettings = {
     labels = [("title", "Title"), ("description", "Description")];
     typeOptions = ["Issue", "Bug Fix", "How-To", "Feature"];
     areaOptions = ["Sales", "Installation", "After Sales", "Backend & Old UI"];
@@ -86,21 +84,26 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
     };
-    userProfiles.get(caller);
+    _userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
-    userProfiles.get(user);
+    _userProfiles.get(user);
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
-    userProfiles.add(caller, profile);
+    _userProfiles.add(caller, profile);
+  };
+
+  // Helper function to check if caller is authenticated (non-anonymous)
+  func isAuthenticated(caller : Principal) : Bool {
+    caller.toText() != "2vxsx-fae"
   };
 
   // Entry Management
@@ -117,12 +120,13 @@ actor {
     instructions : Text,
     resolveDate : ?Int,
   ) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can create entries");
+    // Check if caller is authenticated (non-anonymous)
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Anonymous users cannot create entries");
     };
 
-    let id = nextId;
-    nextId += 1;
+    let id = _nextId;
+    _nextId += 1;
 
     let newEntry : Entry = {
       id;
@@ -141,16 +145,16 @@ actor {
       updatedAt = Time.now();
     };
 
-    entries.add(id, newEntry);
+    _entries.add(id, newEntry);
     id;
   };
 
   public query ({ caller }) func getEntries() : async [Entry] {
-    entries.values().toArray().sort();
+    _entries.values().toArray().sort();
   };
 
   public query ({ caller }) func getEntry(id : Nat) : async Entry {
-    switch (entries.get(id)) {
+    switch (_entries.get(id)) {
       case (?entry) { entry };
       case (null) { Runtime.trap("Entry not found") };
     };
@@ -170,11 +174,12 @@ actor {
     instructions : Text,
     resolveDate : ?Int,
   ) : async Entry {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can update entries");
+    // Check if caller is authenticated (non-anonymous)
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Anonymous users cannot update entries");
     };
 
-    switch (entries.get(id)) {
+    switch (_entries.get(id)) {
       case (?existingEntry) {
         let updatedEntry : Entry = {
           id;
@@ -192,7 +197,7 @@ actor {
           createdAt = existingEntry.createdAt;
           updatedAt = Time.now();
         };
-        entries.add(id, updatedEntry);
+        _entries.add(id, updatedEntry);
         updatedEntry;
       };
       case (null) { Runtime.trap("Entry not found") };
@@ -200,32 +205,33 @@ actor {
   };
 
   public shared ({ caller }) func deleteEntry(id : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can delete entries");
+    // Check if caller is authenticated (non-anonymous)
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Anonymous users cannot delete entries");
     };
 
-    if (not entries.containsKey(id)) {
+    if (not _entries.containsKey(id)) {
       Runtime.trap("Entry not found");
     };
-    entries.remove(id);
+    _entries.remove(id);
   };
 
   public query ({ caller }) func getEntriesByType(entryType : Text) : async [Entry] {
-    let filtered = entries.values().filter(
+    let filtered = _entries.values().filter(
       func(e) { e.entryType == entryType }
     );
     filtered.toArray().sort();
   };
 
   public query ({ caller }) func getEntriesByArea(area : Text) : async [Entry] {
-    let filtered = entries.values().filter(
+    let filtered = _entries.values().filter(
       func(e) { e.area == area }
     );
     filtered.toArray().sort();
   };
 
   public query ({ caller }) func getEntriesByTeam(team : Text) : async [Entry] {
-    let filtered = entries.values().filter(
+    let filtered = _entries.values().filter(
       func(e) { e.team == team }
     );
     filtered.toArray().sort();
@@ -239,7 +245,7 @@ actor {
     var pendingCount = 0;
     var completedCount = 0;
 
-    entries.values().forEach(
+    _entries.values().forEach(
       func(e) {
         switch (e.entryType) {
           case ("Issue") { issueCount += 1 };
@@ -266,19 +272,19 @@ actor {
       featureCount;
       pendingCount;
       completedCount;
-      totalCount = entries.size();
+      totalCount = _entries.size();
     };
   };
 
   // App Settings Management
   public query ({ caller }) func getSettings() : async AppSettings {
-    settings;
+    _settings;
   };
 
   public shared ({ caller }) func updateSettings(newSettings : AppSettings) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can update settings");
     };
-    settings := newSettings;
+    _settings := newSettings;
   };
 };

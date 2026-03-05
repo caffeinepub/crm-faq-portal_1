@@ -27,7 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   AlertCircle,
   BookOpen,
@@ -45,6 +44,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -57,7 +57,6 @@ import {
   useDeleteEntry,
   useEntries,
   useSettings,
-  useUpdateEntry,
 } from "../hooks/useQueries";
 import type { Entry, NavPage } from "../types";
 import {
@@ -76,32 +75,10 @@ const STATUS_OPTIONS = [
   "Not Feasible",
 ];
 
-const DEPENDENCY_OPTIONS = [
-  "Kapture Side",
-  "Brand Team",
-  "After Sales Team",
-  "Operations Team",
-  "Management",
-];
-
 interface EntriesPageProps {
-  onNavigate: (page: NavPage) => void;
+  onNavigate: (page: NavPage, entryId?: bigint) => void;
   focusEntryId?: bigint;
   onClearFocus?: () => void;
-}
-
-interface EditFormState {
-  title: string;
-  description: string;
-  entryType: string;
-  area: string;
-  team: string;
-  status: string;
-  notes: string;
-  reportedBy: string;
-  dependency: string;
-  instructions: string;
-  resolveDate: string;
 }
 
 interface ExportFilters {
@@ -158,7 +135,6 @@ export function EntriesPage({
   const { identity, login } = useInternetIdentity();
   const { data: entries, isLoading } = useEntries();
   const { data: settings } = useSettings();
-  const updateEntry = useUpdateEntry();
   const deleteEntry = useDeleteEntry();
   const createEntry = useCreateEntry();
 
@@ -188,21 +164,7 @@ export function EntriesPage({
   const [filterTeam, setFilterTeam] = useState("all");
 
   const [viewEntry, setViewEntry] = useState<Entry | null>(null);
-  const [editEntry, setEditEntry] = useState<Entry | null>(null);
   const [deleteId, setDeleteId] = useState<bigint | null>(null);
-  const [editForm, setEditForm] = useState<EditFormState>({
-    title: "",
-    description: "",
-    entryType: "",
-    area: "",
-    team: "",
-    status: "",
-    notes: "",
-    reportedBy: "",
-    dependency: "",
-    instructions: "",
-    resolveDate: "",
-  });
 
   // Export/Import state
   const [showExportModal, setShowExportModal] = useState(false);
@@ -221,7 +183,7 @@ export function EntriesPage({
   const focusedEntry = focusEntryId
     ? entries?.find((e) => e.id === focusEntryId)
     : undefined;
-  if (focusedEntry && !viewEntry && !editEntry) {
+  if (focusedEntry && !viewEntry) {
     setViewEntry(focusedEntry);
     onClearFocus?.();
   }
@@ -242,38 +204,8 @@ export function EntriesPage({
   const pageSubtitle = getLabel(labels, "entries_subtitle", DEFAULT_LABELS);
 
   const openEdit = (entry: Entry) => {
-    setEditForm({
-      title: entry.title,
-      description: entry.description,
-      entryType: entry.entryType,
-      area: entry.area,
-      team: entry.team,
-      status: entry.status,
-      notes: entry.notes,
-      reportedBy: entry.reportedBy ?? "",
-      dependency: entry.dependency ?? "",
-      instructions: entry.instructions ?? "",
-      resolveDate: entry.resolveDate
-        ? nanosecondsToDateString(entry.resolveDate)
-        : "",
-    });
-    setEditEntry(entry);
     setViewEntry(null);
-  };
-
-  const handleUpdate = async () => {
-    if (!editEntry) return;
-    try {
-      await updateEntry.mutateAsync({
-        id: editEntry.id,
-        ...editForm,
-        resolveDate: dateStringToNanoseconds(editForm.resolveDate),
-      });
-      toast.success("Entry updated");
-      setEditEntry(null);
-    } catch {
-      toast.error("Failed to update entry");
-    }
+    onNavigate("edit-entry", entry.id);
   };
 
   const handleDelete = async () => {
@@ -735,7 +667,7 @@ export function EntriesPage({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-accent"
+                    className="w-7 h-7 text-muted-foreground hover:text-foreground hover:bg-accent"
                     onClick={() => setViewEntry(entry)}
                     data-ocid="entry.view.button"
                   >
@@ -744,7 +676,7 @@ export function EntriesPage({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-accent"
+                    className="w-7 h-7 text-muted-foreground hover:text-foreground hover:bg-accent"
                     onClick={() => {
                       if (!identity) {
                         toast.error("Sign in required to edit entries");
@@ -760,7 +692,7 @@ export function EntriesPage({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive/60 hover:text-destructive hover:bg-destructive/10"
+                    className="w-7 h-7 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
                     onClick={() => {
                       if (!identity) {
                         toast.error("Sign in required to delete entries");
@@ -1084,230 +1016,6 @@ export function EntriesPage({
                 </Button>
               </>
             )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={!!editEntry} onOpenChange={(o) => !o && setEditEntry(null)}>
-        <DialogContent
-          className="max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto"
-          data-ocid="entry.edit.dialog"
-        >
-          <DialogHeader>
-            <DialogTitle className="font-display text-foreground">
-              Edit Entry
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Update the entry details below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-foreground/70">Title</Label>
-              <Input
-                value={editForm.title}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, title: e.target.value }))
-                }
-                className="bg-input border-border text-foreground"
-                data-ocid="entry.edit.title.input"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-foreground/70">Reported By</Label>
-              <Input
-                value={editForm.reportedBy}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, reportedBy: e.target.value }))
-                }
-                placeholder="Name of reporter..."
-                className="bg-input border-border text-foreground"
-                data-ocid="entry.edit.reported_by.input"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-foreground/70">Description</Label>
-              <Textarea
-                value={editForm.description}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, description: e.target.value }))
-                }
-                rows={3}
-                className="bg-input border-border text-foreground resize-none"
-                data-ocid="entry.edit.description.textarea"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-foreground/70">
-                Step-by-Step Instructions
-              </Label>
-              <Textarea
-                value={editForm.instructions}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, instructions: e.target.value }))
-                }
-                rows={3}
-                placeholder="List steps..."
-                className="bg-input border-border text-foreground resize-none"
-                data-ocid="entry.edit.instructions.textarea"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-foreground/70">Type</Label>
-                <Select
-                  value={editForm.entryType}
-                  onValueChange={(v) =>
-                    setEditForm((p) => ({ ...p, entryType: v }))
-                  }
-                >
-                  <SelectTrigger className="bg-input border-border text-foreground">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border">
-                    {typeOptions.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-foreground/70">Area</Label>
-                <Select
-                  value={editForm.area}
-                  onValueChange={(v) => setEditForm((p) => ({ ...p, area: v }))}
-                >
-                  <SelectTrigger className="bg-input border-border text-foreground">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border">
-                    {areaOptions.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-foreground/70">Team</Label>
-                <Select
-                  value={editForm.team}
-                  onValueChange={(v) => setEditForm((p) => ({ ...p, team: v }))}
-                >
-                  <SelectTrigger className="bg-input border-border text-foreground">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border">
-                    {teamOptions.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-foreground/70">Status</Label>
-                <Select
-                  value={editForm.status}
-                  onValueChange={(v) =>
-                    setEditForm((p) => ({ ...p, status: v }))
-                  }
-                >
-                  <SelectTrigger className="bg-input border-border text-foreground">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border">
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-foreground/70">Dependency</Label>
-              <Select
-                value={editForm.dependency}
-                onValueChange={(v) =>
-                  setEditForm((p) => ({ ...p, dependency: v }))
-                }
-              >
-                <SelectTrigger className="bg-input border-border text-foreground">
-                  <SelectValue placeholder="Select dependency..." />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border">
-                  <SelectItem value="">None</SelectItem>
-                  {DEPENDENCY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-foreground/70">Resolve Date</Label>
-              <Input
-                type="date"
-                value={editForm.resolveDate}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, resolveDate: e.target.value }))
-                }
-                className="bg-input border-border text-foreground"
-                data-ocid="entry.edit.resolve_date.input"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-foreground/70">Notes</Label>
-              <Textarea
-                value={editForm.notes}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, notes: e.target.value }))
-                }
-                rows={2}
-                className="bg-input border-border text-foreground resize-none"
-                data-ocid="entry.edit.notes.textarea"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setEditEntry(null)}
-              className="border-border text-foreground hover:bg-accent"
-              data-ocid="entry.edit.cancel_button"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpdate}
-              disabled={updateEntry.isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              data-ocid="entry.edit.save_button"
-            >
-              {updateEntry.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

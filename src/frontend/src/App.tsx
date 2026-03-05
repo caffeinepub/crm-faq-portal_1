@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { useSettings } from "./hooks/useQueries";
 import { DashboardPage } from "./pages/DashboardPage";
+import { EditEntryPage } from "./pages/EditEntryPage";
 import { EntriesPage } from "./pages/EntriesPage";
 import { EntryFormPage } from "./pages/EntryFormPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -25,6 +26,7 @@ export default function App() {
   const [focusEntryId, setFocusEntryId] = useState<bigint | undefined>(
     undefined,
   );
+  const [editEntryId, setEditEntryId] = useState<bigint | undefined>(undefined);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { data: settings } = useSettings();
@@ -63,7 +65,11 @@ export default function App() {
 
   const handleNavigate = (page: NavPage, entryId?: bigint) => {
     setCurrentPage(page);
-    setFocusEntryId(entryId);
+    if (page === "edit-entry") {
+      setEditEntryId(entryId);
+    } else {
+      setFocusEntryId(entryId);
+    }
     setMobileSidebarOpen(false);
   };
 
@@ -287,6 +293,12 @@ export default function App() {
                 )}
                 {currentPage === "new-entry" && (
                   <EntryFormPage onNavigate={handleNavigate} />
+                )}
+                {currentPage === "edit-entry" && (
+                  <EditEntryPage
+                    entryId={editEntryId}
+                    onNavigate={handleNavigate}
+                  />
                 )}
                 {currentPage === "settings" && <SettingsPage />}
               </motion.div>

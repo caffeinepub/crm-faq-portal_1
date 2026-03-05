@@ -35,4 +35,9 @@ export interface AppSettings {
 }
 
 export type EntryType = "Issue" | "Bug Fix" | "How-To" | "Feature";
-export type NavPage = "dashboard" | "entries" | "new-entry" | "settings";
+export type NavPage =
+  | "dashboard"
+  | "entries"
+  | "new-entry"
+  | "edit-entry"
+  | "settings";
