@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque[opsz,wdth,wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/assets/fonts/Satoshi-Variable.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Outfit";
+  src: url("/assets/fonts/Outfit[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.625rem;
+
+    /* Dark-first: deep navy/charcoal background */
+    --background: 0.13 0.018 265;
+    --foreground: 0.93 0.008 240;
+    --card: 0.17 0.022 268;
+    --card-foreground: 0.93 0.008 240;
+    --popover: 0.19 0.024 268;
+    --popover-foreground: 0.93 0.008 240;
+    --primary: 0.68 0.16 228;
+    --primary-foreground: 0.1 0.02 265;
+    --secondary: 0.22 0.028 268;
+    --secondary-foreground: 0.93 0.008 240;
+    --muted: 0.21 0.024 268;
+    --muted-foreground: 0.58 0.018 265;
+    --accent: 0.24 0.03 268;
+    --accent-foreground: 0.93 0.008 240;
+    --destructive: 0.65 0.22 20;
+    --destructive-foreground: 0.985 0 0;
+    --border: 0.26 0.028 268;
+    --input: 0.24 0.028 268;
+    --ring: 0.55 0.1 230;
+
+    /* Issue — red/orange */
+    --issue-bg: 0.21 0.05 18;
+    --issue-fg: 0.78 0.2 22;
+    --issue-border: 0.34 0.1 18;
+    --issue-top: 0.65 0.22 22;
+
+    /* Bug Fix — amber/yellow */
+    --bugfix-bg: 0.22 0.04 58;
+    --bugfix-fg: 0.82 0.18 58;
+    --bugfix-border: 0.36 0.09 58;
+    --bugfix-top: 0.75 0.19 58;
+
+    /* How-To Guide — cyan/blue */
+    --howto-bg: 0.19 0.04 228;
+    --howto-fg: 0.72 0.15 228;
+    --howto-border: 0.32 0.09 228;
+    --howto-top: 0.65 0.18 228;
+
+    /* Feature — purple/violet */
+    --feature-bg: 0.2 0.05 285;
+    --feature-fg: 0.73 0.16 285;
+    --feature-border: 0.33 0.1 285;
+    --feature-top: 0.66 0.18 285;
+
+    /* Stat number colors (large numerals) */
+    --stat-issue: 0.75 0.22 22;
+    --stat-bugfix: 0.8 0.18 58;
+    --stat-howto: 0.7 0.16 228;
+    --stat-feature: 0.72 0.18 285;
+
+    /* Chart */
+    --chart-1: 0.646 0.222 41.116;
+    --chart-2: 0.6 0.118 184.704;
+    --chart-3: 0.398 0.07 227.392;
+    --chart-4: 0.828 0.189 84.429;
+    --chart-5: 0.769 0.188 70.08;
+
+    /* Sidebar — slightly darker than card */
+    --sidebar: 0.115 0.016 268;
+    --sidebar-foreground: 0.92 0.01 240;
+    --sidebar-primary: 0.68 0.16 228;
+    --sidebar-primary-foreground: 0.1 0.02 265;
+    --sidebar-accent: 0.2 0.026 268;
+    --sidebar-accent-foreground: 0.92 0.01 240;
+    --sidebar-border: 0.22 0.025 268;
+    --sidebar-ring: 0.55 0.1 230;
+  }
+
+  /* No separate .dark block — dark is default */
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Outfit", "Satoshi", sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Bricolage Grotesque", sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: "Bricolage Grotesque", sans-serif;
+  }
+  .font-body {
+    font-family: "Outfit", "Satoshi", sans-serif;
+  }
+
+  /* Type badge utilities */
+  .badge-issue {
+    background-color: oklch(var(--issue-bg));
+    color: oklch(var(--issue-fg));
+    border-color: oklch(var(--issue-border));
+  }
+  .badge-bugfix {
+    background-color: oklch(var(--bugfix-bg));
+    color: oklch(var(--bugfix-fg));
+    border-color: oklch(var(--bugfix-border));
+  }
+  .badge-howto {
+    background-color: oklch(var(--howto-bg));
+    color: oklch(var(--howto-fg));
+    border-color: oklch(var(--howto-border));
+  }
+  .badge-feature {
+    background-color: oklch(var(--feature-bg));
+    color: oklch(var(--feature-fg));
+    border-color: oklch(var(--feature-border));
+  }
+
+  /* Stat number colors */
+  .stat-issue  { color: oklch(var(--stat-issue)); }
+  .stat-bugfix { color: oklch(var(--stat-bugfix)); }
+  .stat-howto  { color: oklch(var(--stat-howto)); }
+  .stat-feature{ color: oklch(var(--stat-feature)); }
+
+  /* Stat card icon bg */
+  .stat-issue-bg  { background-color: oklch(var(--issue-bg)); }
+  .stat-bugfix-bg { background-color: oklch(var(--bugfix-bg)); }
+  .stat-howto-bg  { background-color: oklch(var(--howto-bg)); }
+  .stat-feature-bg{ background-color: oklch(var(--feature-bg)); }
+
+  /* Stat card icon color */
+  .stat-issue-icon  { color: oklch(var(--issue-fg)); }
+  .stat-bugfix-icon { color: oklch(var(--bugfix-fg)); }
+  .stat-howto-icon  { color: oklch(var(--howto-fg)); }
+  .stat-feature-icon{ color: oklch(var(--feature-fg)); }
+
+  /* Top border accent on stat cards */
+  .stat-issue-top  { border-top-color: oklch(var(--issue-top)); }
+  .stat-bugfix-top { border-top-color: oklch(var(--bugfix-top)); }
+  .stat-howto-top  { border-top-color: oklch(var(--howto-top)); }
+  .stat-feature-top{ border-top-color: oklch(var(--feature-top)); }
+
+  /* Sidebar */
+  .nav-sidebar-bg   { background-color: oklch(var(--sidebar)); }
+  .nav-sidebar-text { color: oklch(var(--sidebar-foreground)); }
+
+  /* Status badge overrides for dark bg */
+  .status-open {
+    background-color: oklch(0.22 0.04 22);
+    color: oklch(0.82 0.16 22);
+    border-color: oklch(0.38 0.1 22);
+  }
+  .status-in-progress {
+    background-color: oklch(0.22 0.04 58);
+    color: oklch(0.82 0.16 58);
+    border-color: oklch(0.38 0.09 58);
+  }
+  .status-resolved {
+    background-color: oklch(0.2 0.05 148);
+    color: oklch(0.76 0.16 148);
+    border-color: oklch(0.36 0.1 148);
+  }
+  .status-closed {
+    background-color: oklch(0.22 0.015 268);
+    color: oklch(0.6 0.018 265);
+    border-color: oklch(0.32 0.025 268);
+  }
+  .status-not-feasible {
+    background-color: oklch(0.21 0.045 300);
+    color: oklch(0.78 0.15 300);
+    border-color: oklch(0.36 0.1 300);
+  }
+}
+
+@layer base {
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+}
