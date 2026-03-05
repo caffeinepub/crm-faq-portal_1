@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -43,7 +44,7 @@ interface EditEntryPageProps {
 
 export function EditEntryPage({ entryId, onNavigate }: EditEntryPageProps) {
   const { identity } = useInternetIdentity();
-  const { data: entries } = useEntries();
+  const { data: entries, isLoading: entriesLoading } = useEntries();
   const { data: settings } = useSettings();
   const updateEntry = useUpdateEntry();
 
@@ -144,6 +145,35 @@ export function EditEntryPage({ entryId, onNavigate }: EditEntryPageProps) {
       toast.error("Failed to update entry");
     }
   };
+
+  // Show loading skeleton while entries are being fetched
+  if (entriesLoading || (entryId && !entries)) {
+    return (
+      <div
+        className="max-w-2xl animate-fade-in space-y-6"
+        data-ocid="edit_entry.loading_state"
+      >
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-9 h-9 rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-4 w-56" />
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-border">
+            <Skeleton className="h-5 w-32" />
+          </div>
+          <div className="px-6 py-6 space-y-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!entryId || !entry) {
     return (
