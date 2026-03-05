@@ -8,8 +8,11 @@ export interface None {
 }
 export type Option<T> = Some<T> | None;
 export interface Stats {
+    pendingCount: bigint;
     howToCount: bigint;
+    totalCount: bigint;
     featureCount: bigint;
+    completedCount: bigint;
     issueCount: bigint;
     bugFixCount: bigint;
 }
@@ -22,8 +25,12 @@ export interface Entry {
     createdAt: bigint;
     team: string;
     description: string;
+    instructions: string;
     updatedAt: bigint;
+    reportedBy: string;
+    dependency: string;
     notes: string;
+    resolveDate?: bigint;
 }
 export interface UserProfile {
     name: string;
@@ -43,7 +50,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    createEntry(title: string, description: string, entryType: string, area: string, team: string, status: string, notes: string): Promise<bigint>;
+    createEntry(title: string, description: string, entryType: string, area: string, team: string, status: string, notes: string, reportedBy: string, dependency: string, instructions: string, resolveDate: bigint | null): Promise<bigint>;
     deleteEntry(id: bigint): Promise<void>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -57,6 +64,6 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    updateEntry(id: bigint, title: string, description: string, entryType: string, area: string, team: string, status: string, notes: string): Promise<Entry>;
+    updateEntry(id: bigint, title: string, description: string, entryType: string, area: string, team: string, status: string, notes: string, reportedBy: string, dependency: string, instructions: string, resolveDate: bigint | null): Promise<Entry>;
     updateSettings(newSettings: AppSettings): Promise<void>;
 }

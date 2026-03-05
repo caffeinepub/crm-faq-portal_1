@@ -23,8 +23,12 @@ export const Entry = IDL.Record({
   'createdAt' : IDL.Int,
   'team' : IDL.Text,
   'description' : IDL.Text,
+  'instructions' : IDL.Text,
   'updatedAt' : IDL.Int,
+  'reportedBy' : IDL.Text,
+  'dependency' : IDL.Text,
   'notes' : IDL.Text,
+  'resolveDate' : IDL.Opt(IDL.Int),
 });
 export const AppSettings = IDL.Record({
   'areaOptions' : IDL.Vec(IDL.Text),
@@ -35,8 +39,11 @@ export const AppSettings = IDL.Record({
   'typeOptions' : IDL.Vec(IDL.Text),
 });
 export const Stats = IDL.Record({
+  'pendingCount' : IDL.Nat,
   'howToCount' : IDL.Nat,
+  'totalCount' : IDL.Nat,
   'featureCount' : IDL.Nat,
+  'completedCount' : IDL.Nat,
   'issueCount' : IDL.Nat,
   'bugFixCount' : IDL.Nat,
 });
@@ -45,7 +52,19 @@ export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createEntry' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Opt(IDL.Int),
+      ],
       [IDL.Nat],
       [],
     ),
@@ -76,6 +95,10 @@ export const idlService = IDL.Service({
         IDL.Text,
         IDL.Text,
         IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Opt(IDL.Int),
       ],
       [Entry],
       [],
@@ -101,8 +124,12 @@ export const idlFactory = ({ IDL }) => {
     'createdAt' : IDL.Int,
     'team' : IDL.Text,
     'description' : IDL.Text,
+    'instructions' : IDL.Text,
     'updatedAt' : IDL.Int,
+    'reportedBy' : IDL.Text,
+    'dependency' : IDL.Text,
     'notes' : IDL.Text,
+    'resolveDate' : IDL.Opt(IDL.Int),
   });
   const AppSettings = IDL.Record({
     'areaOptions' : IDL.Vec(IDL.Text),
@@ -113,8 +140,11 @@ export const idlFactory = ({ IDL }) => {
     'typeOptions' : IDL.Vec(IDL.Text),
   });
   const Stats = IDL.Record({
+    'pendingCount' : IDL.Nat,
     'howToCount' : IDL.Nat,
+    'totalCount' : IDL.Nat,
     'featureCount' : IDL.Nat,
+    'completedCount' : IDL.Nat,
     'issueCount' : IDL.Nat,
     'bugFixCount' : IDL.Nat,
   });
@@ -123,7 +153,19 @@ export const idlFactory = ({ IDL }) => {
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createEntry' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Int),
+        ],
         [IDL.Nat],
         [],
       ),
@@ -154,6 +196,10 @@ export const idlFactory = ({ IDL }) => {
           IDL.Text,
           IDL.Text,
           IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Int),
         ],
         [Entry],
         [],

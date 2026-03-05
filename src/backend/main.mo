@@ -1,18 +1,20 @@
 import Map "mo:core/Map";
-import List "mo:core/List";
 import Iter "mo:core/Iter";
 import Array "mo:core/Array";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
-
 import Nat "mo:core/Nat";
 import Int "mo:core/Int";
 import Order "mo:core/Order";
+import List "mo:core/List";
+
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+
+// Use migration module in actor
 
 actor {
   // Include authorization module
@@ -32,6 +34,10 @@ actor {
     team : Text;
     status : Text;
     notes : Text;
+    reportedBy : Text;
+    dependency : Text;
+    instructions : Text;
+    resolveDate : ?Int;
     createdAt : Int;
     updatedAt : Int;
   };
@@ -41,6 +47,9 @@ actor {
     bugFixCount : Nat;
     howToCount : Nat;
     featureCount : Nat;
+    pendingCount : Nat;
+    completedCount : Nat;
+    totalCount : Nat;
   };
 
   public type AppSettings = {
@@ -62,7 +71,7 @@ actor {
 
   let entries = Map.empty<Nat, Entry>();
   let userProfiles = Map.empty<Principal, UserProfile>();
-  
+
   var settings : AppSettings = {
     labels = [("title", "Title"), ("description", "Description")];
     typeOptions = ["Issue", "Bug Fix", "How-To", "Feature"];
@@ -95,7 +104,19 @@ actor {
   };
 
   // Entry Management
-  public shared ({ caller }) func createEntry(title : Text, description : Text, entryType : Text, area : Text, team : Text, status : Text, notes : Text) : async Nat {
+  public shared ({ caller }) func createEntry(
+    title : Text,
+    description : Text,
+    entryType : Text,
+    area : Text,
+    team : Text,
+    status : Text,
+    notes : Text,
+    reportedBy : Text,
+    dependency : Text,
+    instructions : Text,
+    resolveDate : ?Int,
+  ) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create entries");
     };
@@ -112,6 +133,10 @@ actor {
       team;
       status;
       notes;
+      reportedBy;
+      dependency;
+      instructions;
+      resolveDate;
       createdAt = Time.now();
       updatedAt = Time.now();
     };
@@ -131,7 +156,20 @@ actor {
     };
   };
 
-  public shared ({ caller }) func updateEntry(id : Nat, title : Text, description : Text, entryType : Text, area : Text, team : Text, status : Text, notes : Text) : async Entry {
+  public shared ({ caller }) func updateEntry(
+    id : Nat,
+    title : Text,
+    description : Text,
+    entryType : Text,
+    area : Text,
+    team : Text,
+    status : Text,
+    notes : Text,
+    reportedBy : Text,
+    dependency : Text,
+    instructions : Text,
+    resolveDate : ?Int,
+  ) : async Entry {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can update entries");
     };
@@ -147,6 +185,10 @@ actor {
           team;
           status;
           notes;
+          reportedBy;
+          dependency;
+          instructions;
+          resolveDate;
           createdAt = existingEntry.createdAt;
           updatedAt = Time.now();
         };
@@ -194,6 +236,8 @@ actor {
     var bugFixCount = 0;
     var howToCount = 0;
     var featureCount = 0;
+    var pendingCount = 0;
+    var completedCount = 0;
 
     entries.values().forEach(
       func(e) {
@@ -204,6 +248,14 @@ actor {
           case ("Feature") { featureCount += 1 };
           case (_) {};
         };
+
+        switch (e.status) {
+          case ("Open") { pendingCount += 1 };
+          case ("In Progress") { pendingCount += 1 };
+          case ("Resolved") { completedCount += 1 };
+          case ("Closed") { completedCount += 1 };
+          case (_) {};
+        };
       }
     );
 
@@ -212,6 +264,9 @@ actor {
       bugFixCount;
       howToCount;
       featureCount;
+      pendingCount;
+      completedCount;
+      totalCount = entries.size();
     };
   };
 

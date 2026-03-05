@@ -9,13 +9,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, PlusCircle } from "lucide-react";
+import { Loader2, LogIn, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useCreateEntry } from "../hooks/useQueries";
 import { useSettings } from "../hooks/useQueries";
 import type { NavPage } from "../types";
-import { DEFAULT_LABELS, getLabel } from "../utils/entryUtils";
+import {
+  DEFAULT_LABELS,
+  dateStringToNanoseconds,
+  getLabel,
+} from "../utils/entryUtils";
 
 const STATUS_OPTIONS = [
   "Open",
@@ -25,11 +30,20 @@ const STATUS_OPTIONS = [
   "Not Feasible",
 ];
 
+const DEPENDENCY_OPTIONS = [
+  "Kapture Side",
+  "Brand Team",
+  "After Sales Team",
+  "Operations Team",
+  "Management",
+];
+
 interface EntryFormPageProps {
   onNavigate: (page: NavPage) => void;
 }
 
 export function EntryFormPage({ onNavigate }: EntryFormPageProps) {
+  const { identity, login } = useInternetIdentity();
   const { data: settings } = useSettings();
   const createEntry = useCreateEntry();
 
@@ -61,6 +75,10 @@ export function EntryFormPage({ onNavigate }: EntryFormPageProps) {
     team: "",
     status: "Open",
     notes: "",
+    reportedBy: "",
+    dependency: "",
+    instructions: "",
+    resolveDate: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -84,7 +102,10 @@ export function EntryFormPage({ onNavigate }: EntryFormPageProps) {
       return;
     }
     try {
-      await createEntry.mutateAsync(form);
+      await createEntry.mutateAsync({
+        ...form,
+        resolveDate: dateStringToNanoseconds(form.resolveDate),
+      });
       toast.success("Entry created successfully");
       onNavigate("entries");
     } catch {
@@ -101,6 +122,52 @@ export function EntryFormPage({ onNavigate }: EntryFormPageProps) {
         return e;
       });
   };
+
+  // Auth wall — must be signed in to create entries
+  if (!identity) {
+    return (
+      <div className="max-w-2xl animate-fade-in">
+        <div className="mb-6">
+          <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
+            {pageTitle}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">{pageSubtitle}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-6 py-12 flex flex-col items-center text-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <LogIn className="w-7 h-7 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-display text-lg font-semibold text-foreground mb-1">
+                Sign in required to create entries
+              </h2>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                You need to be signed in to create, edit, or delete entries in
+                this portal.
+              </p>
+            </div>
+            <Button
+              onClick={login}
+              data-ocid="new_entry.signin_button"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In with Internet Identity
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onNavigate("entries")}
+              data-ocid="new_entry.cancel_button"
+              className="border-border text-foreground hover:bg-accent"
+            >
+              Back to Entries
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl animate-fade-in">
@@ -152,6 +219,24 @@ export function EntryFormPage({ onNavigate }: EntryFormPageProps) {
               )}
             </div>
 
+            {/* Reported By */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="entry-reported-by"
+                className="text-foreground/70 text-sm font-medium"
+              >
+                Reported By
+              </Label>
+              <Input
+                id="entry-reported-by"
+                placeholder="Name of the person who reported this..."
+                value={form.reportedBy}
+                onChange={(e) => setField("reportedBy", e.target.value)}
+                data-ocid="new_entry.reported_by.input"
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
+
             {/* Description */}
             <div className="space-y-1.5">
               <Label
@@ -166,6 +251,25 @@ export function EntryFormPage({ onNavigate }: EntryFormPageProps) {
                 value={form.description}
                 onChange={(e) => setField("description", e.target.value)}
                 data-ocid="new_entry.description.textarea"
+                rows={4}
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground resize-none"
+              />
+            </div>
+
+            {/* Step-by-Step Instructions */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="entry-instructions"
+                className="text-foreground/70 text-sm font-medium"
+              >
+                Step-by-Step Instructions
+              </Label>
+              <Textarea
+                id="entry-instructions"
+                placeholder="List steps to reproduce, resolve, or follow..."
+                value={form.instructions}
+                onChange={(e) => setField("instructions", e.target.value)}
+                data-ocid="new_entry.instructions.textarea"
                 rows={4}
                 className="bg-input border-border text-foreground placeholder:text-muted-foreground resize-none"
               />
@@ -246,7 +350,7 @@ export function EntryFormPage({ onNavigate }: EntryFormPageProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-foreground/70 text-sm font-medium">
-                  Reported By (Team) <span className="text-destructive">*</span>
+                  Team <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={form.team}
@@ -300,6 +404,50 @@ export function EntryFormPage({ onNavigate }: EntryFormPageProps) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Dependency + Resolve Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-foreground/70 text-sm font-medium">
+                  Dependency
+                </Label>
+                <Select
+                  value={form.dependency}
+                  onValueChange={(v) => setField("dependency", v)}
+                >
+                  <SelectTrigger
+                    data-ocid="new_entry.dependency.select"
+                    className="bg-input border-border text-foreground"
+                  >
+                    <SelectValue placeholder="Select dependency..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    {DEPENDENCY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="entry-resolve-date"
+                  className="text-foreground/70 text-sm font-medium"
+                >
+                  Resolve Date
+                </Label>
+                <Input
+                  id="entry-resolve-date"
+                  type="date"
+                  value={form.resolveDate}
+                  onChange={(e) => setField("resolveDate", e.target.value)}
+                  data-ocid="new_entry.resolve_date.input"
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+                />
               </div>
             </div>
 

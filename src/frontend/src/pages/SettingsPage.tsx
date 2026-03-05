@@ -14,6 +14,7 @@ import {
   Check,
   Image as ImageIcon,
   Loader2,
+  LogIn,
   Pencil,
   Plus,
   Settings2,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useSettings, useUpdateSettings } from "../hooks/useQueries";
 import type { AppSettings } from "../types";
 import { DEFAULT_LABELS, getLabel } from "../utils/entryUtils";
@@ -193,6 +195,7 @@ function OptionList({
 }
 
 export function SettingsPage() {
+  const { identity, login } = useInternetIdentity();
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
 
@@ -258,6 +261,45 @@ export function SettingsPage() {
     }
     setEditLabelKey(null);
   };
+
+  // Auth wall — must be signed in to view/edit settings
+  if (!identity) {
+    return (
+      <div className="space-y-6 animate-fade-in max-w-3xl">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            Settings
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Configure your portal labels, images and dropdowns.
+          </p>
+        </div>
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-6 py-12 flex flex-col items-center text-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <LogIn className="w-7 h-7 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-display text-lg font-semibold text-foreground mb-1">
+                Sign in required to access Settings
+              </h2>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                You need to be signed in to view and modify portal settings.
+              </p>
+            </div>
+            <Button
+              onClick={login}
+              data-ocid="settings.signin_button"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In with Internet Identity
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !draft) {
     return (

@@ -27,12 +27,19 @@ export interface Entry {
   'createdAt' : bigint,
   'team' : string,
   'description' : string,
+  'instructions' : string,
   'updatedAt' : bigint,
+  'reportedBy' : string,
+  'dependency' : string,
   'notes' : string,
+  'resolveDate' : [] | [bigint],
 }
 export interface Stats {
+  'pendingCount' : bigint,
   'howToCount' : bigint,
+  'totalCount' : bigint,
   'featureCount' : bigint,
+  'completedCount' : bigint,
   'issueCount' : bigint,
   'bugFixCount' : bigint,
 }
@@ -44,7 +51,19 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createEntry' : ActorMethod<
-    [string, string, string, string, string, string, string],
+    [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      [] | [bigint],
+    ],
     bigint
   >,
   'deleteEntry' : ActorMethod<[bigint], undefined>,
@@ -61,7 +80,20 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'updateEntry' : ActorMethod<
-    [bigint, string, string, string, string, string, string, string],
+    [
+      bigint,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      [] | [bigint],
+    ],
     Entry
   >,
   'updateSettings' : ActorMethod<[AppSettings], undefined>,

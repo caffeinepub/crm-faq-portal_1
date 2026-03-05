@@ -25,6 +25,9 @@ export function useStats() {
           featureCount: 0n,
           issueCount: 0n,
           bugFixCount: 0n,
+          pendingCount: 0n,
+          completedCount: 0n,
+          totalCount: 0n,
         };
       return actor.getStats();
     },
@@ -86,6 +89,10 @@ export function useCreateEntry() {
       team: string;
       status: string;
       notes: string;
+      reportedBy: string;
+      dependency: string;
+      instructions: string;
+      resolveDate: bigint | null;
     }) => {
       if (!actor) throw new Error("No actor");
       return actor.createEntry(
@@ -96,6 +103,10 @@ export function useCreateEntry() {
         data.team,
         data.status,
         data.notes,
+        data.reportedBy,
+        data.dependency,
+        data.instructions,
+        data.resolveDate,
       );
     },
     onSuccess: () => {
@@ -118,6 +129,10 @@ export function useUpdateEntry() {
       team: string;
       status: string;
       notes: string;
+      reportedBy: string;
+      dependency: string;
+      instructions: string;
+      resolveDate: bigint | null;
     }) => {
       if (!actor) throw new Error("No actor");
       return actor.updateEntry(
@@ -129,6 +144,10 @@ export function useUpdateEntry() {
         data.team,
         data.status,
         data.notes,
+        data.reportedBy,
+        data.dependency,
+        data.instructions,
+        data.resolveDate,
       );
     },
     onSuccess: () => {

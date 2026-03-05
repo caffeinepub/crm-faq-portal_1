@@ -7,8 +7,12 @@ export interface Entry {
   createdAt: bigint;
   team: string;
   description: string;
+  instructions: string;
   updatedAt: bigint;
+  reportedBy: string;
+  dependency: string;
   notes: string;
+  resolveDate?: bigint;
 }
 
 export interface Stats {
@@ -16,6 +20,9 @@ export interface Stats {
   featureCount: bigint;
   issueCount: bigint;
   bugFixCount: bigint;
+  pendingCount: bigint;
+  completedCount: bigint;
+  totalCount: bigint;
 }
 
 export interface AppSettings {

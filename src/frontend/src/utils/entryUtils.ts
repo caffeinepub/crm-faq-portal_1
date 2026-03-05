@@ -108,6 +108,30 @@ export function formatDate(timestamp: bigint): string {
   });
 }
 
+/**
+ * Converts a bigint nanosecond timestamp to "YYYY-MM-DD" string
+ */
+export function nanosecondsToDateString(ns: bigint): string {
+  const ms = Number(ns) / 1_000_000;
+  const date = new Date(ms);
+  if (Number.isNaN(date.getTime()) || date.getFullYear() < 2000) return "";
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Converts "YYYY-MM-DD" string to bigint nanoseconds (Unix ms * 1_000_000).
+ * Returns null if the string is empty or invalid.
+ */
+export function dateStringToNanoseconds(dateStr: string): bigint | null {
+  if (!dateStr || !dateStr.trim()) return null;
+  const ms = Date.parse(dateStr);
+  if (Number.isNaN(ms)) return null;
+  return BigInt(ms) * 1_000_000n;
+}
+
 export const DEFAULT_LABELS: [string, string][] = [
   ["app_title", "CRM FAQ Portal"],
   ["app_subtitle", "Knowledge Base & Issue Tracker"],
